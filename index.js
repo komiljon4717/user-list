@@ -16,30 +16,21 @@ let changeNewPassword = document.querySelector("#changeNewPassword")
 let changePassword = document.querySelector("#changePassword")
 
 
-
-
-
-
-
+let filters = document.querySelectorAll('.nav-item')
 let saveBtn = document.querySelector("#save-btn")
 let saveChangesBtn = document.querySelector('#save-changes')
 let tbody = document.querySelector('tbody')
 let btnEdit = document.querySelector('.btn')
-let userEdit = document.querySelector('#user-edit')
+let search = document.querySelector('#search')
+let chackBoxs = document.querySelectorAll('.custom-control-input')
+let allChackBox = document.querySelectorAll('#all-items')
+let globalFilter = 'All'
+let filterArr = []
 
 
 // databases
 let users = window.localStorage.getItem('users')
 users = JSON.parse(users) || []
-
-
-
-// function createElements(...arr){
-//     return arr.map( el => {
-//         return document.createElement(el)
-//     })
-// }
-
 
 
 function createUser() {
@@ -63,7 +54,8 @@ function createUser() {
         email: createEmail.value,
         password: createPassword.value,
         date: new Date().toLocaleDateString("en-US"),
-        bio: createBio.value
+        bio: createBio.value,
+        done : false
 
     })
     window.localStorage.setItem('users', JSON.stringify(users))
@@ -81,7 +73,7 @@ function renderUsers(users) {
         let tr = document.createElement('tr')
         tr.innerHTML = `<td class="align-middle">
         <div class="custom-control custom-control-inline custom-checkbox custom-control-nameless m-0 align-top">
-          <input type="checkbox" class="custom-control-input" id=${user.userId}>
+          <input ${user.done && 'checked'} type="checkbox" class="custom-control-input" id=${user.userId} onclick="checkInput(this)">
           <label class="custom-control-label" for=${user.userId}></label>
         </div>
       </td>
@@ -91,58 +83,14 @@ function renderUsers(users) {
       <td class="text-center align-middle">
         <div class="btn-group align-top">
             <button class="btn btn-sm btn-outline-secondary badge edit_btn" type="button" data-toggle="modal" data-target="#user-edit" data-edit="${user.userId}">Edit</button>
-            <button class="btn btn-sm btn-outline-secondary badge" type="button"><i class="fa fa-trash"></i></button>
+            <button class="btn btn-sm btn-outline-secondary badge del_btn" type="button" value="${user.userId}"><i class="fa fa-trash"></i></button>
         </div>
       </td>`
         tbody.append(tr)
     }
 }
 
-
-
 renderUsers(users)
-const editBtns = document.querySelectorAll('.edit_btn')
-let editedUser
-
-
-for (const i of editBtns) {
-    i.onclick = (e) => {
-        console.log(users);
-        editedUser = users.find(el => e.target.dataset.edit == el.userId)
-        console.log(editedUser);
-        // console.log(editedUser.password);
-
-        // if (!(changeFullName.value.trim().length < 30 && changeFullName.value.trim())) {
-        //     return alert('Wrong Fullname')
-        // }
-        // if (!(changeUsername.value.trim().length < 30 && changeUsername.value.trim())) {
-        //     return alert('Wrong username')
-        // }
-        // if (!(/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/).test(changeEmail.value)) {
-        //     return alert('Wrong Email')
-        // }
-        // if (!((/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$/).test(currentChangePass.value) == editedUser.password)) {
-        //     return alert('Wrong current password')
-        // }
-        // if (!((/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$/).test(changeNewPassword.value) == (/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$/).test(changePassword.value))) {
-        //     return alert('Wrong password')
-        // }
-
-        // users[editedUser.userId - 1] = ({
-        //     userId: users.Id,
-        //     fullName : changeFullName.value,
-        //     username : changeUsername.value,
-        //     email: changeEmail.value,
-        //     password: changeNewPassword.value,
-        //     date: new Date().toLocaleDateString("en-US"),
-        //     bio: changeBio.value
-    
-        // })
-        // window.localStorage.setItem('users', JSON.stringify(users))
-
-
-    }
-}
 
 function changeUser() {
     if (!(changeFullName.value.trim().length < 30 && changeFullName.value.trim())) {
@@ -154,14 +102,13 @@ function changeUser() {
     if (!(/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/).test(changeEmail.value)) {
         return alert('Wrong Email')
     }
-    // console.log(currentChangePass.value , editedUser.password);
-    console.log(editedUser);
     if (!(currentChangePass.value == editedUser.password)) {
         return alert('Wrong current password')
     }
     if (!((/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$/).test(changeNewPassword.value) == (/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$/).test(changePassword.value))) {
         return alert('Wrong password')
     }
+
 
     users[editedUser.userId - 1] = ({
         userId: editedUser.userId,
@@ -175,10 +122,71 @@ function changeUser() {
     })
     window.localStorage.setItem('users', JSON.stringify(users))
 }
-    
-// console.log(currentChangePass.value);
-// console.log(editedUser.password);
 
+function checkInput (event) {
+	const found = users.find(el => el.userId == event.id)
+	if(found) {
+		found.done = event.checked
+		window.localStorage.setItem('users', JSON.stringify(users))
+	}
+}
+
+
+const deleteBtns = document.querySelectorAll('.del_btn')
+const editBtns = document.querySelectorAll('.edit_btn')
+let editedUser
+
+
+for (const i of editBtns) {
+    i.onclick = (e) => {
+        editedUser = users.find(el => e.target.dataset.edit == el.userId)
+    }
+}
+
+
+for (const del of deleteBtns) {
+    del.onclick = (ev) =>{
+        let deleteUser = users.find(el => del.value == el.userId) 
+        let data = []
+        for (const user of users) {
+            if (!(user.userId == deleteUser.userId)) {
+                data.push(user)
+            }
+        }
+        window.localStorage.setItem('users', JSON.stringify(data))
+        window.location = '/index.html'
+    }
+}
+
+    
+search.onkeyup = () => {
+    tbody.innerHTML = null
+    let tr = document.createElement('tr')
+    for (const user of users) {
+        if (user.fullName.includes(search.value)) {
+            console.log(user.fullName);
+            tr.innerHTML = `<td class="align-middle">
+            <div class="custom-control custom-control-inline custom-checkbox custom-control-nameless m-0 align-top">
+              <input type="checkbox" class="custom-control-input" id=${user.userId} onclick="checkInput(this)">
+              <label class="custom-control-label" for=${user.userId}></label>
+            </div>
+          </td>
+          <td class="text-nowrap align-middle">${user.fullName}</td>
+          <td class="text-nowrap align-middle"><span>${user.date}</span></td>
+          <td class="text-center align-middle"><i class="fa fa-fw text-secondary cursor-pointer fa-toggle-on"></i></td>
+          <td class="text-center align-middle">
+            <div class="btn-group align-top">
+                <button class="btn btn-sm btn-outline-secondary badge edit_btn" type="button" data-toggle="modal" data-target="#user-edit" data-edit="${user.userId}">Edit</button>
+                <button class="btn btn-sm btn-outline-secondary badge del_btn" type="button" value="${user.userId}"><i class="fa fa-trash"></i></button>
+            </div>
+          </td>`
+        }else if (search.value.length == 0) {
+            window.location = '/index.html'
+        }
+        tbody.append(tr)
+        
+    }
+}
 
 
 saveBtn.onclick = (event) => {
@@ -191,6 +199,7 @@ saveChangesBtn.onclick = (e) =>{
     e.preventDefault()
     console.log("salom");
     changeUser()
+    window.location = '/index.html'
 }
 
 
